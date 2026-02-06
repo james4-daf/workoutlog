@@ -1,11 +1,11 @@
 {
-  "name": "Workout App",
-  "short_name": "Workout",
-  "description": "Track your exercises and workouts",
+  "name": "HUB",
+  "short_name": "HUB",
+  "description": "Your personal app hub",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#171717",
+  "background_color": "#FAFAFC",
+  "theme_color": "#FAFAFC",
   "orientation": "portrait-primary",
   "icons": [
     {
@@ -22,4 +22,3 @@
     }
   ]
 }
-

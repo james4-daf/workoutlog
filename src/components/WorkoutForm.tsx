@@ -96,7 +96,6 @@ export function WorkoutForm({ action, exercises }: WorkoutFormProps) {
             return g
           }
           const newSets = g.sets.filter((s) => s.id !== setId)
-          // Renumber sets
           return {
             ...g,
             sets: newSets.map((s, index) => ({
@@ -146,7 +145,6 @@ export function WorkoutForm({ action, exercises }: WorkoutFormProps) {
     setError(null)
     setSuccess(false)
 
-    // Validate
     if (exerciseGroups.length === 0) {
       setError('Add at least one exercise to log a workout')
       return
@@ -163,7 +161,6 @@ export function WorkoutForm({ action, exercises }: WorkoutFormProps) {
       }
     }
 
-    // Flatten exercise groups into sets with exercise_id
     let setNumber = 1
     const flattenedSets = exerciseGroups.flatMap((group) =>
       group.sets.map((set) => ({
@@ -188,7 +185,6 @@ export function WorkoutForm({ action, exercises }: WorkoutFormProps) {
         setError(result.error)
       } else if (result?.success) {
         setSuccess(true)
-        // Reset form
         setWorkoutDate(() => {
           const today = new Date()
           today.setHours(0, 0, 0, 0)
@@ -196,9 +192,8 @@ export function WorkoutForm({ action, exercises }: WorkoutFormProps) {
         })
         setNotes('')
         setExerciseGroups([])
-        // Redirect after a moment
         setTimeout(() => {
-          router.push('/workouts')
+          router.push('/workout/history')
           router.refresh()
         }, 1500)
       }
@@ -206,112 +201,99 @@ export function WorkoutForm({ action, exercises }: WorkoutFormProps) {
   }
 
   return (
-    <div className="mb-8 rounded-lg bg-white p-6 shadow">
-      <h2 className="mb-4 text-xl font-semibold text-gray-900">Log Workout</h2>
-
+    <div className="animate-slide-up">
       {error && (
-        <div className="mb-4 rounded-md bg-red-50 p-4">
-          <p className="text-sm font-medium text-red-800">{error}</p>
+        <div className="mb-4 rounded-xl bg-danger-muted border border-danger/20 px-4 py-3 animate-slide-down">
+          <p className="text-sm font-medium text-danger">{error}</p>
         </div>
       )}
 
       {success && (
-        <div className="mb-4 rounded-md bg-green-50 p-4">
-          <p className="text-sm font-medium text-green-800">
-            Workout logged successfully! Redirecting...
-          </p>
+        <div className="mb-4 rounded-xl bg-success-muted border border-success/20 px-4 py-3 animate-slide-down">
+          <p className="text-sm font-medium text-success">Workout logged! Redirecting...</p>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Date & Notes */}
+        <div className="rounded-2xl bg-surface border border-border p-4 space-y-4">
           <div>
-            <label
-              htmlFor="workout_date"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Workout Date
-            </label>
+            <label htmlFor="workout_date">Date & Time</label>
             <input
               id="workout_date"
               type="datetime-local"
               value={workoutDate}
               onChange={(e) => setWorkoutDate(e.target.value)}
               disabled={isPending}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-gray-900 focus:outline-none focus:ring-gray-900 disabled:opacity-50"
+            />
+          </div>
+          <div>
+            <label htmlFor="notes">Notes <span className="text-dim font-normal">(optional)</span></label>
+            <textarea
+              id="notes"
+              rows={2}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              disabled={isPending}
+              placeholder="How did the workout feel?"
             />
           </div>
         </div>
 
+        {/* Exercises */}
         <div>
-          <label
-            htmlFor="notes"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Workout Notes (optional)
-          </label>
-          <textarea
-            id="notes"
-            rows={2}
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            disabled={isPending}
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-gray-900 focus:outline-none focus:ring-gray-900 disabled:opacity-50"
-            placeholder="How did the workout feel? Any notes..."
-          />
-        </div>
-
-        <div>
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-lg font-medium text-gray-900">Exercises</h3>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-display text-base font-bold text-foreground">Exercises</h3>
             <button
               type="button"
               onClick={addExercise}
               disabled={isPending}
-              className="rounded-md bg-gray-900 px-3 py-1 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+              className="rounded-xl bg-accent-muted px-3.5 py-1.5 text-xs font-semibold text-accent
+                hover:bg-accent/20 active:scale-[0.97] transition-all disabled:opacity-50"
             >
-              + Add Exercise
+              + Add
             </button>
           </div>
 
           {exerciseGroups.length === 0 ? (
-            <div className="rounded-md border-2 border-dashed border-gray-300 p-8 text-center">
-              <p className="text-gray-500 mb-4">No exercises added yet.</p>
-              <button
-                type="button"
-                onClick={addExercise}
-                disabled={isPending}
-                className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
-              >
-                Add Your First Exercise
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={addExercise}
+              disabled={isPending}
+              className="w-full rounded-2xl border border-dashed border-border hover:border-accent/30
+                bg-surface/50 p-8 text-center transition-all group disabled:opacity-50"
+            >
+              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl
+                bg-accent-muted group-hover:bg-accent/20 transition-colors">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  strokeWidth="2" strokeLinecap="round" className="text-accent">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+              </div>
+              <p className="text-sm text-muted">Add your first exercise</p>
+            </button>
           ) : (
-            <div className="space-y-6">
-              {exerciseGroups.map((group) => (
+            <div className="space-y-3">
+              {exerciseGroups.map((group, groupIndex) => (
                 <div
                   key={group.id}
-                  className="rounded-md border-2 border-gray-200 bg-gray-50 p-4"
+                  className="rounded-2xl bg-surface border border-border p-4 animate-scale-in"
                 >
-                  <div className="mb-4 flex items-center justify-between">
+                  {/* Exercise selector */}
+                  <div className="flex items-start gap-3 mb-3">
                     <div className="flex-1">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Exercise <span className="text-red-500">*</span>
+                      <label>
+                        Exercise {groupIndex + 1} <span className="text-accent">*</span>
                       </label>
                       <select
                         value={group.exercise_id}
-                        onChange={(e) =>
-                          updateExerciseGroup(group.id, e.target.value)
-                        }
+                        onChange={(e) => updateExerciseGroup(group.id, e.target.value)}
                         disabled={isPending}
                         required
-                        className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:outline-none focus:ring-gray-900 disabled:opacity-50"
                       >
                         <option value="">Select exercise</option>
                         {exercises.map((ex) => (
-                          <option key={ex.id} value={ex.id}>
-                            {ex.name}
-                          </option>
+                          <option key={ex.id} value={ex.id}>{ex.name}</option>
                         ))}
                       </select>
                     </div>
@@ -319,151 +301,116 @@ export function WorkoutForm({ action, exercises }: WorkoutFormProps) {
                       type="button"
                       onClick={() => removeExercise(group.id)}
                       disabled={isPending}
-                      className="ml-4 text-sm text-red-600 hover:text-red-800 disabled:opacity-50"
+                      className="mt-6 rounded-lg p-2 text-dim hover:text-danger hover:bg-danger-muted
+                        transition-colors disabled:opacity-50"
                     >
-                      Remove Exercise
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        strokeWidth="2" strokeLinecap="round">
+                        <path d="M18 6L6 18M6 6l12 12" />
+                      </svg>
                     </button>
                   </div>
 
+                  {/* Sets */}
                   {group.exercise_id && (
                     <div>
-                      <div className="mb-3 flex items-center justify-between">
-                        <h4 className="text-sm font-medium text-gray-700">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-medium text-dim uppercase tracking-wide">
                           Sets for {getExerciseName(group.exercise_id)}
-                        </h4>
+                        </span>
                         <button
                           type="button"
                           onClick={() => addSetToExercise(group.id)}
                           disabled={isPending}
-                          className="text-sm text-gray-700 hover:text-gray-900 disabled:opacity-50"
+                          className="text-xs font-semibold text-accent hover:text-accent-hover transition-colors
+                            disabled:opacity-50"
                         >
                           + Add Set
                         </button>
                       </div>
 
-                      <div className="space-y-3">
+                      {/* Set header */}
+                      <div className="grid grid-cols-[2.5rem_1fr_1fr_1fr_1fr_2rem] gap-2 mb-1 px-1">
+                        <span className="text-[10px] font-medium text-dim">#</span>
+                        <span className="text-[10px] font-medium text-dim">Reps</span>
+                        <span className="text-[10px] font-medium text-dim">Weight</span>
+                        <span className="text-[10px] font-medium text-dim">Time</span>
+                        <span className="text-[10px] font-medium text-dim">Dist</span>
+                        <span></span>
+                      </div>
+
+                      <div className="space-y-1.5">
                         {group.sets.map((set) => (
                           <div
                             key={set.id}
-                            className="rounded-md border border-gray-300 bg-white p-3"
+                            className="grid grid-cols-[2.5rem_1fr_1fr_1fr_1fr_2rem] gap-2 items-center"
                           >
-                            <div className="mb-2 flex items-center justify-between">
-                              <span className="text-xs font-medium text-gray-600">
-                                Set {set.set_number}
-                              </span>
-                              {group.sets.length > 1 && (
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    removeSetFromExercise(group.id, set.id)
-                                  }
-                                  disabled={isPending}
-                                  className="text-xs text-red-600 hover:text-red-800 disabled:opacity-50"
-                                >
-                                  Remove
-                                </button>
-                              )}
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                              <div>
-                                <label className="block text-xs font-medium text-gray-700">
-                                  Reps
-                                </label>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  value={set.reps || ''}
-                                  onChange={(e) =>
-                                    updateSet(
-                                      group.id,
-                                      set.id,
-                                      'reps',
-                                      e.target.value
-                                        ? parseInt(e.target.value)
-                                        : null
-                                    )
-                                  }
-                                  disabled={isPending}
-                                  className="mt-1 block w-full rounded-md border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:outline-none focus:ring-gray-900 disabled:opacity-50"
-                                  placeholder="10"
-                                />
-                              </div>
-
-                              <div>
-                                <label className="block text-xs font-medium text-gray-700">
-                                  Weight (lbs)
-                                </label>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  step="0.5"
-                                  value={set.weight || ''}
-                                  onChange={(e) =>
-                                    updateSet(
-                                      group.id,
-                                      set.id,
-                                      'weight',
-                                      e.target.value
-                                        ? parseFloat(e.target.value)
-                                        : null
-                                    )
-                                  }
-                                  disabled={isPending}
-                                  className="mt-1 block w-full rounded-md border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:outline-none focus:ring-gray-900 disabled:opacity-50"
-                                  placeholder="135"
-                                />
-                              </div>
-
-                              <div>
-                                <label className="block text-xs font-medium text-gray-700">
-                                  Duration (sec)
-                                </label>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  value={set.duration_seconds || ''}
-                                  onChange={(e) =>
-                                    updateSet(
-                                      group.id,
-                                      set.id,
-                                      'duration_seconds',
-                                      e.target.value
-                                        ? parseInt(e.target.value)
-                                        : null
-                                    )
-                                  }
-                                  disabled={isPending}
-                                  className="mt-1 block w-full rounded-md border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:outline-none focus:ring-gray-900 disabled:opacity-50"
-                                  placeholder="60"
-                                />
-                              </div>
-
-                              <div>
-                                <label className="block text-xs font-medium text-gray-700">
-                                  Distance (m)
-                                </label>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  step="0.1"
-                                  value={set.distance_meters || ''}
-                                  onChange={(e) =>
-                                    updateSet(
-                                      group.id,
-                                      set.id,
-                                      'distance_meters',
-                                      e.target.value
-                                        ? parseFloat(e.target.value)
-                                        : null
-                                    )
-                                  }
-                                  disabled={isPending}
-                                  className="mt-1 block w-full rounded-md border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:outline-none focus:ring-gray-900 disabled:opacity-50"
-                                  placeholder="100"
-                                />
-                              </div>
-                            </div>
+                            <span className="text-sm font-bold text-accent text-center">
+                              {set.set_number}
+                            </span>
+                            <input
+                              type="number"
+                              min="0"
+                              value={set.reps || ''}
+                              onChange={(e) =>
+                                updateSet(group.id, set.id, 'reps',
+                                  e.target.value ? parseInt(e.target.value) : null)
+                              }
+                              disabled={isPending}
+                              placeholder="-"
+                              className="!p-2 !text-sm text-center !rounded-lg"
+                            />
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.5"
+                              value={set.weight || ''}
+                              onChange={(e) =>
+                                updateSet(group.id, set.id, 'weight',
+                                  e.target.value ? parseFloat(e.target.value) : null)
+                              }
+                              disabled={isPending}
+                              placeholder="-"
+                              className="!p-2 !text-sm text-center !rounded-lg"
+                            />
+                            <input
+                              type="number"
+                              min="0"
+                              value={set.duration_seconds || ''}
+                              onChange={(e) =>
+                                updateSet(group.id, set.id, 'duration_seconds',
+                                  e.target.value ? parseInt(e.target.value) : null)
+                              }
+                              disabled={isPending}
+                              placeholder="-"
+                              className="!p-2 !text-sm text-center !rounded-lg"
+                            />
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.1"
+                              value={set.distance_meters || ''}
+                              onChange={(e) =>
+                                updateSet(group.id, set.id, 'distance_meters',
+                                  e.target.value ? parseFloat(e.target.value) : null)
+                              }
+                              disabled={isPending}
+                              placeholder="-"
+                              className="!p-2 !text-sm text-center !rounded-lg"
+                            />
+                            {group.sets.length > 1 ? (
+                              <button
+                                type="button"
+                                onClick={() => removeSetFromExercise(group.id, set.id)}
+                                disabled={isPending}
+                                className="p-1 text-dim hover:text-danger transition-colors disabled:opacity-50"
+                              >
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                                  stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                                  <path d="M18 6L6 18M6 6l12 12" />
+                                </svg>
+                              </button>
+                            ) : <span />}
                           </div>
                         ))}
                       </div>
@@ -475,17 +422,17 @@ export function WorkoutForm({ action, exercises }: WorkoutFormProps) {
           )}
         </div>
 
-        <div>
-          <button
-            type="submit"
-            disabled={isPending}
-            className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isPending ? 'Logging workout...' : 'Log Workout'}
-          </button>
-        </div>
+        {/* Submit */}
+        <button
+          type="submit"
+          disabled={isPending}
+          className="w-full rounded-2xl bg-accent px-6 py-3.5 text-sm font-semibold text-black
+            hover:brightness-110 active:scale-[0.98] transition-all
+            disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
+        >
+          {isPending ? 'Logging workout...' : 'Log Workout'}
+        </button>
       </form>
     </div>
   )
 }
-

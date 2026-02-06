@@ -31,7 +31,7 @@ export async function createExercise(formData: FormData) {
     return { error: error.message }
   }
 
-  revalidatePath('/exercises')
+  revalidatePath('/workout/exercises')
   return { success: true }
 }
 
@@ -48,7 +48,7 @@ export async function deleteExercise(exerciseId: string) {
     throw new Error(error.message)
   }
 
-  revalidatePath('/exercises')
+  revalidatePath('/workout/exercises')
 }
 
 // Wrapper for form actions

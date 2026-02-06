@@ -1,16 +1,16 @@
 // Service Worker for Workout App PWA
-const CACHE_NAME = 'workout-app-v1'
+const CACHE_NAME = 'workout-app-v2'
+
+// Only cache static assets, NOT HTML pages
 const urlsToCache = [
-  '/',
-  '/login',
-  '/signup',
-  '/exercises',
-  '/workouts',
-  '/workouts/log',
+  '/icon-192.png',
+  '/icon-512.png',
+  '/manifest.json',
 ]
 
-// Install event - cache resources
+// Install event - cache static assets only
 self.addEventListener('install', (event) => {
+  self.skipWaiting()
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(urlsToCache)
@@ -18,16 +18,7 @@ self.addEventListener('install', (event) => {
   )
 })
 
-// Fetch event - serve from cache, fallback to network
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request)
-    })
-  )
-})
-
-// Activate event - clean up old caches
+// Activate event - clean up old caches and take control immediately
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -38,7 +29,29 @@ self.addEventListener('activate', (event) => {
           }
         })
       )
-    })
+    }).then(() => self.clients.claim())
   )
 })
 
+// Fetch event - network-first for navigations, cache-first for static assets
+self.addEventListener('fetch', (event) => {
+  const { request } = event
+
+  // Navigation requests (HTML pages) - always go to network
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request).catch(() => {
+        // Offline fallback: return cached page if network fails
+        return caches.match(request)
+      })
+    )
+    return
+  }
+
+  // Static assets - cache-first
+  event.respondWith(
+    caches.match(request).then((response) => {
+      return response || fetch(request)
+    })
+  )
+})

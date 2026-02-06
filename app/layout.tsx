@@ -1,27 +1,28 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Syne, Outfit } from "next/font/google";
 import "./globals.css";
-import { Nav } from "@/src/components/Nav";
 import { ServiceWorker } from "@/src/components/ServiceWorker";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const syne = Syne({
+  variable: "--font-syne",
   subsets: ["latin"],
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const outfit = Outfit({
+  variable: "--font-outfit",
   subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Workout App",
-  description: "Track your exercises and workouts",
+  title: "HUB",
+  description: "Your personal app hub",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
-    title: "Workout App",
+    statusBarStyle: "black-translucent",
+    title: "HUB",
   },
   formatDetection: {
     telephone: false,
@@ -44,7 +45,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: "cover",
-  themeColor: "#171717",
+  themeColor: "#FAFAFC",
 };
 
 export default function RootLayout({
@@ -56,25 +57,21 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <link rel="manifest" href="/manifest.json" />
-        {/* Favicon for various browsers and devices */}
         <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
         <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png" />
         <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png" />
         <link rel="shortcut icon" href="/icon-192.png" />
-        {/* Apple Web App */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="Workout App" />
-        {/* Windows */}
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="HUB" />
         <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="msapplication-TileColor" content="#171717" />
+        <meta name="msapplication-TileColor" content="#FAFAFC" />
         <meta name="msapplication-TileImage" content="/icon-192.png" />
         <meta name="msapplication-config" content="/browserconfig.xml" />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${syne.variable} ${outfit.variable} antialiased`}
       >
-        <Nav />
         {children}
         <ServiceWorker />
       </body>

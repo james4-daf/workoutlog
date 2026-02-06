@@ -35,45 +35,44 @@ export function AuthForm({
       if (result?.error) {
         setError(result.error)
       } else if (result?.success) {
-        // Redirect on success
-        router.push('/exercises')
+        router.push('/')
         router.refresh()
       }
     })
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-md space-y-8 rounded-lg bg-white p-8 shadow">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900">{title}</h1>
-          <p className="mt-2 text-gray-600">{subtitle}</p>
+    <div className="flex min-h-[calc(100vh-56px)] items-center justify-center px-5">
+      <div className="w-full max-w-sm animate-slide-up">
+        <div className="mb-8">
+          <h1 className="font-display text-3xl font-bold text-foreground">{title}</h1>
+          <p className="mt-2 text-muted text-sm">{subtitle}</p>
         </div>
 
         {error && (
-          <div className="rounded-md bg-red-50 p-4">
-            <p className="text-sm font-medium text-red-800">{error}</p>
+          <div className="mb-6 rounded-xl bg-danger-muted border border-danger/20 px-4 py-3 animate-slide-down">
+            <p className="text-sm font-medium text-danger">{error}</p>
           </div>
         )}
 
-        <form action={handleSubmit} className="mt-8 space-y-6">
+        <form action={handleSubmit} className="space-y-5">
           <div className="space-y-4">{children}</div>
 
-          <div>
-            <button
-              type="submit"
-              disabled={isPending}
-              className="w-full rounded-md bg-gray-900 px-4 py-3 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isPending ? 'Please wait...' : submitText}
-            </button>
-          </div>
+          <button
+            type="submit"
+            disabled={isPending}
+            className="w-full rounded-2xl bg-accent px-6 py-3.5 text-sm font-semibold text-black
+              hover:brightness-110 active:scale-[0.98] transition-all
+              disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
+          >
+            {isPending ? 'Please wait...' : submitText}
+          </button>
 
-          <div className="text-center text-sm">
-            <span className="text-gray-600">{linkText} </span>
+          <div className="text-center text-sm pt-2">
+            <span className="text-dim">{linkText} </span>
             <a
               href={linkHref}
-              className="font-medium text-gray-900 hover:underline"
+              className="font-medium text-accent hover:text-accent-hover transition-colors"
             >
               {linkLabel}
             </a>
@@ -83,4 +82,3 @@ export function AuthForm({
     </div>
   )
 }
-
