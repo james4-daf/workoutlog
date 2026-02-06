@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import type { Note } from '@/src/actions/notes'
 import { getNote, createNote, updateNote, deleteNote } from '@/src/actions/notes'
 import { toDateInputValue, todayDateString } from './formatNoteDate'
@@ -30,7 +30,8 @@ export function NoteEditor({
   const [noteDate, setNoteDate] = useState('')
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
-  const saveTimeoutRef = useState<ReturnType<typeof setTimeout> | null>(null)[0]
+  const lastSavedRef = useRef<string | null>(null)
+  const persistRef = useRef<(p: { title: string; body: string; note_date: string | null }) => Promise<void>>(() => Promise.resolve())
 
   const persist = useCallback(
     async (payload: { title: string; body: string; note_date: string | null }) => {
@@ -39,7 +40,7 @@ export function NoteEditor({
         const result = await updateNote(noteId, payload)
         setSaving(false)
         if (!result.error && note) {
-          setNote({ ...note, ...payload, updated_at: new Date().toISOString() })
+          setNote((prev) => (prev ? { ...prev, ...payload, updated_at: new Date().toISOString() } : null))
           onSaved({ ...note, ...payload, updated_at: new Date().toISOString() })
         }
       } else {
@@ -59,6 +60,7 @@ export function NoteEditor({
     },
     [noteId, folderId, note, onSaved]
   )
+  persistRef.current = persist
 
   useEffect(() => {
     if (noteId) {
@@ -70,6 +72,7 @@ export function NoteEditor({
           setTitle(n.title)
           setBody(n.body)
           setNoteDate(toDateInputValue(n.note_date ?? n.updated_at))
+          lastSavedRef.current = null
         }
       })
     } else {
@@ -77,6 +80,7 @@ export function NoteEditor({
       setTitle('')
       setBody('')
       setNoteDate(todayDateString())
+      lastSavedRef.current = null
     }
   }, [noteId])
 
@@ -86,15 +90,20 @@ export function NoteEditor({
       body: body.trim(),
       note_date: noteDate.trim() || null,
     }
+    const payloadKey = JSON.stringify(payload)
+    if (lastSavedRef.current === payloadKey) return
+
     const t = setTimeout(() => {
       if (noteId) {
-        persist(payload)
+        lastSavedRef.current = payloadKey
+        persistRef.current(payload)
       } else if (payload.title || payload.body) {
-        persist(payload)
+        lastSavedRef.current = payloadKey
+        persistRef.current(payload)
       }
     }, SAVE_DEBOUNCE_MS)
     return () => clearTimeout(t)
-  }, [title, body, noteDate, noteId, persist])
+  }, [title, body, noteDate, noteId])
 
   const handleDelete = async () => {
     if (!noteId || deleting) return
@@ -115,16 +124,17 @@ export function NoteEditor({
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden bg-surface">
-      <header className="flex items-center gap-2 border-b border-border px-4 py-3">
+      <header className="flex shrink-0 items-center gap-2 border-b border-border bg-surface px-4 py-3">
         <button
           type="button"
           onClick={onClose}
-          className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-muted hover:bg-surface-hover hover:text-foreground"
-          aria-label="Back to list"
+          className="-ml-1 flex min-h-[44px] items-center gap-2 rounded-lg px-2 py-2 text-foreground hover:bg-surface-hover md:min-w-[44px] md:justify-center"
+          aria-label="Back to notes"
         >
-          <ArrowLeft className="h-5 w-5" />
+          <ArrowLeft className="h-5 w-5 shrink-0" />
+          <span className="text-sm font-medium md:hidden">Back to notes</span>
         </button>
-        <div className="flex-1" />
+        <div className="min-w-0 flex-1" />
         {saving && (
           <span className="flex items-center gap-1 text-xs text-muted">
             <Loader2 className="h-3 w-3 animate-spin" /> Saving…

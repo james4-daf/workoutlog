@@ -52,11 +52,9 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Safe area handled by nav and bottom bar; no global padding to avoid double top/bottom inset */
 html {
-  padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
-  padding-left: env(safe-area-inset-left);
-  padding-right: env(safe-area-inset-right);
+  /* padding intentionally omitted so sticky/fixed nav and bottom bar control safe areas */
 }
 
 body {

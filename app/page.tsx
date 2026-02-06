@@ -89,7 +89,7 @@ export default async function Home() {
 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 stagger">
           <AppCard
-            href="/workout/exercises"
+            href="/workout"
             title="Workout"
             description="Track your lifts"
             icon={

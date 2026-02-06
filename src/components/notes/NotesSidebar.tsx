@@ -39,7 +39,7 @@ export function NotesSidebar({
   }
 
   return (
-    <aside className="flex w-52 shrink-0 flex-col border-r border-border bg-surface-alt">
+    <aside className="flex w-full md:w-52 shrink-0 flex-col border-r border-border bg-surface-alt">
       <div className="flex items-center justify-between border-b border-border p-3">
         <h2 className="font-display text-sm font-bold text-foreground">Folders</h2>
         <button

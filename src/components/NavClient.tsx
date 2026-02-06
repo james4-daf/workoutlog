@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { signOut } from '@/src/actions/auth'
 
 interface NavClientProps {
   isLoggedIn: boolean
@@ -18,15 +17,6 @@ function DumbbellIcon({ active }: { active: boolean }) {
   )
 }
 
-function PlusIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      strokeWidth="2.5" strokeLinecap="round">
-      <path d="M12 5v14M5 12h14" />
-    </svg>
-  )
-}
-
 function ClockIcon({ active }: { active: boolean }) {
   return (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -38,10 +28,22 @@ function ClockIcon({ active }: { active: boolean }) {
   )
 }
 
+function HomeIcon({ active }: { active: boolean }) {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth={active ? 2 : 1.5} strokeLinecap="round" strokeLinejoin="round"
+      className="transition-all duration-200">
+      <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+      <path d="M9 22V12h6v10" />
+    </svg>
+  )
+}
+
 export function NavClient({ isLoggedIn }: NavClientProps) {
   const pathname = usePathname()
 
   const isActive = (path: string) => pathname === path || pathname.startsWith(path + '/')
+  const isDashboard = pathname === '/workout'
 
   // Not logged in: minimal top bar
   if (!isLoggedIn) {
@@ -72,11 +74,30 @@ export function NavClient({ isLoggedIn }: NavClientProps) {
       <nav className="hidden md:block border-b border-border safe-area-top bg-background/80 backdrop-blur-xl sticky top-0 z-50">
         <div className="mx-auto max-w-7xl px-6">
           <div className="flex h-14 items-center justify-between">
-            <Link href="/" className="font-display text-lg font-bold tracking-tight text-foreground">
-              WORKOUT
-            </Link>
+            <div className="flex items-center gap-3">
+              <Link
+                href="/"
+                className="text-sm text-dim hover:text-foreground transition-colors"
+              >
+                &larr; Home
+              </Link>
+              <span className="text-border">/</span>
+              <Link href="/workout" className="font-display text-lg font-bold tracking-tight text-foreground">
+                WORKOUT
+              </Link>
+            </div>
 
             <div className="flex items-center gap-1">
+              <Link
+                href="/workout"
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  isDashboard
+                    ? 'text-accent bg-accent-muted'
+                    : 'text-muted hover:text-foreground hover:bg-white/5'
+                }`}
+              >
+                Home
+              </Link>
               <Link
                 href="/workout/exercises"
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -108,15 +129,6 @@ export function NavClient({ isLoggedIn }: NavClientProps) {
                 + Log Workout
               </Link>
             </div>
-
-            <form action={signOut}>
-              <button
-                type="submit"
-                className="rounded-lg px-3 py-2 text-sm text-dim hover:text-foreground transition-colors"
-              >
-                Logout
-              </button>
-            </form>
           </div>
         </div>
       </nav>
@@ -124,28 +136,39 @@ export function NavClient({ isLoggedIn }: NavClientProps) {
       {/* ── Mobile top bar (minimal) ──────────────── */}
       <nav className="md:hidden safe-area-top bg-background/80 backdrop-blur-xl sticky top-0 z-50">
         <div className="flex h-12 items-center justify-between px-5">
-          <span className="font-display text-base font-bold tracking-tight text-foreground">
-            WORKOUT
-          </span>
-          <form action={signOut}>
-            <button
-              type="submit"
-              className="text-sm text-dim hover:text-foreground transition-colors py-2 px-2"
+          <div className="flex items-center gap-3">
+            <Link
+              href="/"
+              className="text-sm text-dim hover:text-foreground transition-colors"
             >
-              Logout
-            </button>
-          </form>
+              &larr; Home
+            </Link>
+            <span className="text-border">/</span>
+            <Link href="/workout" className="font-display text-base font-bold tracking-tight text-foreground">
+              WORKOUT
+            </Link>
+          </div>
         </div>
       </nav>
 
-      {/* ── Mobile bottom bar ─────────────────────── */}
-      <div className="md:hidden fixed bottom-0 inset-x-0 z-50 safe-area-bottom">
-        <div className="bg-[#0C0C0E]/90 backdrop-blur-2xl border-t border-border">
-          <div className="flex items-center justify-around px-6 py-2">
-            {/* Exercises tab */}
+      {/* ── Mobile bottom bar (bg on outer so safe-area isn’t whitespace) ── */}
+      <div className="md:hidden fixed bottom-0 inset-x-0 z-50 safe-area-bottom bg-[#0C0C0E]/90 backdrop-blur-2xl border-t border-border">
+        <div className="flex items-center justify-around px-4 py-2">
+            {/* Home / Dashboard */}
+            <Link
+              href="/workout"
+              className={`flex flex-col items-center gap-0.5 py-1.5 px-2 rounded-xl transition-colors ${
+                isDashboard ? 'text-accent' : 'text-dim'
+              }`}
+            >
+              <HomeIcon active={isDashboard} />
+              <span className="text-[10px] font-medium">Home</span>
+            </Link>
+
+            {/* Exercises */}
             <Link
               href="/workout/exercises"
-              className={`flex flex-col items-center gap-0.5 py-1.5 px-3 rounded-xl transition-colors ${
+              className={`flex flex-col items-center gap-0.5 py-1.5 px-2 rounded-xl transition-colors ${
                 isActive('/workout/exercises') ? 'text-accent' : 'text-dim'
               }`}
             >
@@ -153,23 +176,10 @@ export function NavClient({ isLoggedIn }: NavClientProps) {
               <span className="text-[10px] font-medium">Exercises</span>
             </Link>
 
-            {/* Log Workout tab (center, prominent) */}
-            <Link
-              href="/workout/log"
-              className={`flex items-center justify-center w-14 h-14 -mt-5 rounded-2xl transition-all shadow-lg ${
-                isActive('/workout/log')
-                  ? 'bg-accent text-black shadow-accent-glow'
-                  : 'bg-accent/90 text-black hover:bg-accent'
-              }`}
-              style={{ boxShadow: isActive('/workout/log') ? '0 4px 24px rgba(212,255,0,0.3)' : '0 4px 16px rgba(0,0,0,0.4)' }}
-            >
-              <PlusIcon />
-            </Link>
-
-            {/* History tab */}
+            {/* History */}
             <Link
               href="/workout/history"
-              className={`flex flex-col items-center gap-0.5 py-1.5 px-3 rounded-xl transition-colors ${
+              className={`flex flex-col items-center gap-0.5 py-1.5 px-2 rounded-xl transition-colors ${
                 pathname === '/workout/history' ? 'text-accent' : 'text-dim'
               }`}
             >
@@ -177,7 +187,6 @@ export function NavClient({ isLoggedIn }: NavClientProps) {
               <span className="text-[10px] font-medium">History</span>
             </Link>
           </div>
-        </div>
       </div>
     </>
   )

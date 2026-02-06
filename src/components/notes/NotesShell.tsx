@@ -106,16 +106,44 @@ export function NotesShell() {
   const editorNoteId = isNewNote ? null : effectiveNoteId
 
   return (
-    <div className="flex h-[calc(100vh-theme(spacing.14))] min-h-[400px]">
-      <NotesSidebar
-        folders={folders}
-        currentFolderId={currentFolderId}
-        onSelectFolder={handleSelectFolder}
-        onNewNote={handleNewNote}
-        onFolderCreated={handleFolderCreated}
-      />
-      <div className="flex min-w-0 flex-1 flex-col border-r border-border bg-surface-alt">
-        {showEditor ? (
+    <div className="relative flex h-[calc(100vh-theme(spacing.14))] min-h-[400px]">
+      {/* Mobile: list view (sidebar + notes list) full screen when no note open */}
+      <div
+        className={`flex flex-col md:flex-row md:min-w-0 flex-1 ${showEditor ? 'hidden md:flex' : ''}`}
+      >
+        <NotesSidebar
+          folders={folders}
+          currentFolderId={currentFolderId}
+          onSelectFolder={handleSelectFolder}
+          onNewNote={handleNewNote}
+          onFolderCreated={handleFolderCreated}
+        />
+        <div className="flex min-w-0 flex-1 flex-col border-r border-border bg-surface-alt">
+          <div className="border-b border-border px-4 py-3">
+            <h2 className="font-display text-lg font-bold text-foreground">
+              {currentFolderId
+                ? folders.find((f) => f.id === currentFolderId)?.name ?? 'Notes'
+                : 'All Notes'}
+            </h2>
+          </div>
+          {loading ? (
+            <div className="flex flex-1 items-center justify-center">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+            </div>
+          ) : (
+            <NotesList
+              notes={notes}
+              currentFolderId={currentFolderId}
+              selectedNoteId={effectiveNoteId}
+              onSelectNote={handleSelectNote}
+            />
+          )}
+        </div>
+      </div>
+
+      {/* Mobile: note editor full screen when note open; desktop: same row */}
+      {showEditor && (
+        <div className="absolute inset-0 flex flex-col bg-surface md:static md:min-w-0 md:flex-1 md:border-r md:border-border">
           <NoteEditor
             noteId={editorNoteId}
             folderId={currentFolderId}
@@ -123,30 +151,8 @@ export function NotesShell() {
             onSaved={handleNoteSaved}
             onDeleted={handleNoteDeleted}
           />
-        ) : (
-          <>
-            <div className="border-b border-border px-4 py-3">
-              <h2 className="font-display text-lg font-bold text-foreground">
-                {currentFolderId
-                  ? folders.find((f) => f.id === currentFolderId)?.name ?? 'Notes'
-                  : 'All Notes'}
-              </h2>
-            </div>
-            {loading ? (
-              <div className="flex flex-1 items-center justify-center">
-                <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
-              </div>
-            ) : (
-              <NotesList
-                notes={notes}
-                currentFolderId={currentFolderId}
-                selectedNoteId={effectiveNoteId}
-                onSelectNote={handleSelectNote}
-              />
-            )}
-          </>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
 }

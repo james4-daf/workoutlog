@@ -85,6 +85,7 @@ export async function createWorkout(formData: FormData) {
     return { error: setsError.message }
   }
 
+  revalidatePath('/workout')
   revalidatePath('/workout/history')
   revalidatePath('/workout/log')
   return { success: true, workout_id: workout.id }
@@ -103,6 +104,7 @@ export async function deleteWorkout(workoutId: string) {
     throw new Error(error.message)
   }
 
+  revalidatePath('/workout')
   revalidatePath('/workout/history')
 }
 

@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import { signOut } from '@/src/actions/auth'
 
 interface SubAppNavClientProps {
   appName: string
@@ -46,15 +45,6 @@ export function SubAppNavClient({ appName, isLoggedIn }: SubAppNavClientProps) {
               {appName.toUpperCase()}
             </span>
           </div>
-
-          <form action={signOut}>
-            <button
-              type="submit"
-              className="rounded-lg px-3 py-2 text-sm text-dim hover:text-foreground transition-colors"
-            >
-              Logout
-            </button>
-          </form>
         </div>
       </div>
     </nav>
