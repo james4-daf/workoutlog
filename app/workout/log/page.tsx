@@ -1,6 +1,7 @@
 import { requireAuth } from '@/src/lib/auth'
 import { createClient } from '@/src/lib/supabase/server'
 import { createWorkout } from '@/src/actions/workouts'
+import { getScheduledWorkout } from '@/src/actions/scheduledWorkout'
 import { WorkoutForm } from '@/src/components/WorkoutForm'
 
 interface Exercise {
@@ -24,9 +25,24 @@ async function getExercises(userId: string): Promise<Exercise[]> {
   return data || []
 }
 
-export default async function LogWorkoutPage() {
+export default async function LogWorkoutPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ scheduled?: string }>
+}) {
   const user = await requireAuth()
-  const exercises = await getExercises(user.id)
+  const [exercises, params] = await Promise.all([
+    getExercises(user.id),
+    searchParams,
+  ])
+  const isScheduled = params.scheduled === '1'
+  const scheduledIds = isScheduled ? await getScheduledWorkout() : []
+  const validExerciseIds = new Set(exercises.map((e) => e.id))
+  const initialExerciseIds =
+    isScheduled && scheduledIds.length > 0
+      ? scheduledIds.filter((id) => validExerciseIds.has(id))
+      : undefined
+  const skippedCount = isScheduled ? scheduledIds.length - (initialExerciseIds?.length ?? 0) : 0
 
   if (exercises.length === 0) {
     return (
@@ -60,13 +76,26 @@ export default async function LogWorkoutPage() {
     <div className="min-h-screen pb-24 md:pb-8 safe-area-bottom">
       <div className="mx-auto max-w-2xl px-5 pt-6 sm:pt-8">
         <div className="mb-6 animate-slide-up">
-          <h1 className="font-display text-2xl font-bold text-foreground">Log Workout</h1>
+          <h1 className="font-display text-2xl font-bold text-foreground">
+            {isScheduled ? 'Scheduled Workout' : 'Log Workout'}
+          </h1>
           <p className="mt-1 text-sm text-muted">
-            Record your sets, reps, and weights
+            {isScheduled
+              ? 'Pre-filled from your schedule. Add sets and log it.'
+              : 'Record your sets, reps, and weights'}
           </p>
+          {skippedCount > 0 && (
+            <p className="mt-2 text-xs text-dim">
+              {skippedCount} scheduled exercise{skippedCount !== 1 ? 's' : ''} no longer in your library (removed or renamed).
+            </p>
+          )}
         </div>
 
-        <WorkoutForm action={createWorkout} exercises={exercises} />
+        <WorkoutForm
+          action={createWorkout}
+          exercises={exercises}
+          initialExerciseIds={initialExerciseIds}
+        />
       </div>
     </div>
   )

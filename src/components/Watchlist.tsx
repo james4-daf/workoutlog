@@ -82,7 +82,7 @@ export function Watchlist({ initialSymbols }: WatchlistProps) {
       }
     }
 
-    symbols.forEach(fetchOne)
+    Promise.all(symbols.map(fetchOne)).then(() => setLoading(false))
   }, [symbols, apiKey])
 
   useEffect(() => {

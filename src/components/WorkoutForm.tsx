@@ -27,9 +27,23 @@ interface ExerciseGroup {
 interface WorkoutFormProps {
   action: (formData: FormData) => Promise<{ error?: string; success?: boolean; workout_id?: string } | void>
   exercises: Exercise[]
+  /** Pre-fill with these exercise IDs (e.g. from scheduled workout). */
+  initialExerciseIds?: string[]
 }
 
-export function WorkoutForm({ action, exercises }: WorkoutFormProps) {
+function buildInitialGroups(initialExerciseIds: string[] | undefined): ExerciseGroup[] {
+  if (!initialExerciseIds?.length) return []
+  const t = Date.now()
+  return initialExerciseIds.map((exercise_id, i) => ({
+    id: `${t}-${i}`,
+    exercise_id,
+    sets: [
+      { id: `${t}-${i}-1`, set_number: 1, reps: null, weight: null },
+    ],
+  }))
+}
+
+export function WorkoutForm({ action, exercises, initialExerciseIds }: WorkoutFormProps) {
   const router = useRouter()
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
@@ -40,7 +54,9 @@ export function WorkoutForm({ action, exercises }: WorkoutFormProps) {
     return today.toISOString().slice(0, 16)
   })
   const [notes, setNotes] = useState('')
-  const [exerciseGroups, setExerciseGroups] = useState<ExerciseGroup[]>([])
+  const [exerciseGroups, setExerciseGroups] = useState<ExerciseGroup[]>(
+    () => buildInitialGroups(initialExerciseIds)
+  )
 
   function addExercise() {
     const newGroup: ExerciseGroup = {

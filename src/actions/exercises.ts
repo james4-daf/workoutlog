@@ -32,7 +32,39 @@ export async function createExercise(formData: FormData) {
   }
 
   revalidatePath('/workout/exercises')
+  revalidatePath('/workout')
   return { success: true }
+}
+
+/** Create an exercise with just a name (e.g. from schedule search). Returns the new exercise. */
+export async function createExerciseQuick(name: string): Promise<
+  { error: string; exercise: null } | { error: null; exercise: { id: string; name: string } }
+> {
+  const user = await requireAuth()
+  const supabase = await createClient()
+  const trimmed = name?.trim()
+  if (!trimmed) {
+    return { error: 'Exercise name is required', exercise: null }
+  }
+
+  const { data, error } = await supabase
+    .from('exercises')
+    .insert({
+      user_id: user.id,
+      name: trimmed,
+      muscle_group: null,
+      equipment: null,
+      notes: null,
+    })
+    .select('id, name')
+    .single()
+
+  if (error) {
+    return { error: error.message, exercise: null }
+  }
+  revalidatePath('/workout/exercises')
+  revalidatePath('/workout')
+  return { error: null, exercise: data as { id: string; name: string } }
 }
 
 export async function deleteExercise(exerciseId: string) {

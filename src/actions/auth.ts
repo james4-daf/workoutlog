@@ -4,6 +4,14 @@ import { createClient } from '@/src/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 
+/** Returns current user or null. Used by client so / can render instantly. */
+export async function getCurrentUser(): Promise<{ id: string; email?: string } | null> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
+  return { id: user.id, email: user.email ?? undefined }
+}
+
 export async function signUp(formData: FormData) {
   const supabase = await createClient()
 

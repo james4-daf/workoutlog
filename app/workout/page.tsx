@@ -1,6 +1,23 @@
 import { requireAuth } from '@/src/lib/auth'
 import { getLastWorkout } from '@/src/lib/workouts'
+import { getScheduledWorkout } from '@/src/actions/scheduledWorkout'
+import { createClient } from '@/src/lib/supabase/server'
 import Link from 'next/link'
+import { ScheduleWorkoutBlock } from '@/src/components/ScheduleWorkoutBlock'
+
+async function getExercises(userId: string): Promise<{ id: string; name: string }[]> {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('exercises')
+    .select('id, name')
+    .eq('user_id', userId)
+    .order('name', { ascending: true })
+  if (error) {
+    console.error('Error fetching exercises:', error)
+    return []
+  }
+  return data ?? []
+}
 
 const DAILY_QUOTES = [
   'The only bad workout is the one that didn’t happen.',
@@ -48,9 +65,11 @@ function formatRelativeDate(date: Date): string {
 
 export default async function WorkoutDashboardPage() {
   const user = await requireAuth()
-  const [lastWorkout, quote] = await Promise.all([
+  const [lastWorkout, quote, scheduledIds, exercises] = await Promise.all([
     getLastWorkout(user.id),
     Promise.resolve(getDailyQuote()),
+    getScheduledWorkout(),
+    getExercises(user.id),
   ])
 
   const exerciseCount = lastWorkout
@@ -82,6 +101,21 @@ export default async function WorkoutDashboardPage() {
             </svg>
             Start Workout
           </Link>
+
+          {/* Schedule workout — visible button */}
+          <a
+            href="#schedule-workout"
+            className="mt-3 flex items-center justify-center gap-2 rounded-2xl border border-border
+              bg-surface py-3.5 px-6 text-base font-semibold text-foreground
+              hover:bg-surface-hover active:scale-[0.98] transition-all animate-slide-up"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+              <path d="M16 2v4M8 2v4M3 10h18" />
+            </svg>
+            Schedule workout
+          </a>
 
           {/* Daily quote */}
           <div className="mt-6 rounded-2xl bg-surface border border-border px-5 py-4 animate-slide-up">
@@ -130,6 +164,10 @@ export default async function WorkoutDashboardPage() {
             </div>
           )}
           </div>
+
+          <section id="schedule-workout" className="scroll-mt-4">
+            <ScheduleWorkoutBlock exercises={exercises} initialIds={scheduledIds} />
+          </section>
         </div>
       </div>
     </div>

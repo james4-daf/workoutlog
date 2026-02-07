@@ -1,28 +1,99 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import type { Note, NoteFolder } from '@/src/actions/notes'
-import { getFolders, getNotes } from '@/src/actions/notes'
 import { NotesSidebar } from './NotesSidebar'
 import { NotesList } from './NotesList'
 import { NoteEditor } from './NoteEditor'
 
 const NEW_NOTE_ID = 'new'
+const CACHE_KEY = 'notes_cache'
+const CACHE_TTL = 24 * 60 * 60 * 1000 // 24 hours
 
-export function NotesShell() {
+type CachePayload = {
+  ts: number
+  notes: Note[]
+  folders: NoteFolder[]
+}
+
+function readCache(): CachePayload | null {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as CachePayload
+    if (Date.now() - parsed.ts > CACHE_TTL) {
+      localStorage.removeItem(CACHE_KEY)
+      return null
+    }
+    return parsed
+  } catch {
+    return null
+  }
+}
+
+function writeCache(notes: Note[], folders: NoteFolder[]) {
+  try {
+    const payload: CachePayload = { ts: Date.now(), notes, folders }
+    localStorage.setItem(CACHE_KEY, JSON.stringify(payload))
+  } catch {
+    // localStorage full or unavailable — ignore
+  }
+}
+
+export function NotesShell({
+  initialFolders,
+  initialNotes,
+}: {
+  initialFolders: NoteFolder[]
+  initialNotes: Note[]
+}) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const folderId = searchParams.get('folder')
   const noteId = searchParams.get('note')
 
-  const [folders, setFolders] = useState<NoteFolder[]>([])
-  const [notes, setNotes] = useState<Note[]>([])
-  const [loading, setLoading] = useState(true)
+  // Initialize from server props if available, otherwise fall back to cache
+  const [folders, setFolders] = useState<NoteFolder[]>(() => {
+    if (initialFolders.length > 0) return initialFolders
+    return readCache()?.folders ?? []
+  })
+  const [allNotes, setAllNotes] = useState<Note[]>(() => {
+    if (initialNotes.length > 0) return initialNotes
+    return readCache()?.notes ?? []
+  })
 
   const currentFolderId = folderId === '' || folderId === undefined ? null : folderId
   const effectiveNoteId = noteId === '' || noteId === undefined ? null : noteId
   const isNewNote = effectiveNoteId === NEW_NOTE_ID
+
+  // Sync from server props when they arrive (e.g. after hydration on return visit)
+  useEffect(() => {
+    if (initialNotes.length > 0) {
+      setAllNotes(initialNotes)
+    }
+    if (initialFolders.length > 0) {
+      setFolders(initialFolders)
+    }
+  }, [initialNotes, initialFolders])
+
+  // Write to cache whenever notes or folders change
+  useEffect(() => {
+    writeCache(allNotes, folders)
+  }, [allNotes, folders])
+
+  // Filter notes client-side by current folder
+  const filteredNotes = useMemo(() => {
+    if (currentFolderId === null) return allNotes
+    return allNotes.filter((n) => n.folder_id === currentFolderId)
+  }, [allNotes, currentFolderId])
+
+  // Find selected note from memory
+  const editorNoteId = isNewNote ? null : effectiveNoteId
+  const selectedNote = useMemo(() => {
+    if (!editorNoteId) return null
+    return allNotes.find((n) => n.id === editorNoteId) ?? null
+  }, [allNotes, editorNoteId])
 
   const setUrl = useCallback(
     (params: { folder?: string | null; note?: string | null }) => {
@@ -39,21 +110,6 @@ export function NotesShell() {
     },
     [router, searchParams]
   )
-
-  useEffect(() => {
-    let cancelled = false
-    setLoading(true)
-    Promise.all([getFolders(), getNotes(currentFolderId)]).then(([f, n]) => {
-      if (!cancelled) {
-        setFolders(f)
-        setNotes(n)
-        setLoading(false)
-      }
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [currentFolderId])
 
   const handleSelectFolder = useCallback(
     (id: string | null) => {
@@ -86,7 +142,7 @@ export function NotesShell() {
       if (isNewNote && note.id) {
         setUrl({ folder: note.folder_id ?? currentFolderId, note: note.id })
       }
-      setNotes((prev) => {
+      setAllNotes((prev) => {
         const idx = prev.findIndex((n) => n.id === note.id)
         const next = [...prev]
         if (idx >= 0) next[idx] = note
@@ -98,12 +154,11 @@ export function NotesShell() {
   )
 
   const handleNoteDeleted = useCallback(() => {
-    setNotes((prev) => prev.filter((n) => n.id !== effectiveNoteId))
+    setAllNotes((prev) => prev.filter((n) => n.id !== effectiveNoteId))
     setUrl({ note: null })
   }, [effectiveNoteId, setUrl])
 
   const showEditor = effectiveNoteId !== null
-  const editorNoteId = isNewNote ? null : effectiveNoteId
 
   return (
     <div className="relative flex h-[calc(100vh-theme(spacing.14))] min-h-[400px]">
@@ -126,18 +181,12 @@ export function NotesShell() {
                 : 'All Notes'}
             </h2>
           </div>
-          {loading ? (
-            <div className="flex flex-1 items-center justify-center">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
-            </div>
-          ) : (
-            <NotesList
-              notes={notes}
-              currentFolderId={currentFolderId}
-              selectedNoteId={effectiveNoteId}
-              onSelectNote={handleSelectNote}
-            />
-          )}
+          <NotesList
+            notes={filteredNotes}
+            currentFolderId={currentFolderId}
+            selectedNoteId={effectiveNoteId}
+            onSelectNote={handleSelectNote}
+          />
         </div>
       </div>
 
@@ -147,6 +196,7 @@ export function NotesShell() {
           <NoteEditor
             noteId={editorNoteId}
             folderId={currentFolderId}
+            initialNote={selectedNote}
             onClose={handleCloseEditor}
             onSaved={handleNoteSaved}
             onDeleted={handleNoteDeleted}

@@ -9,6 +9,7 @@ import { ArrowLeft, Loader2, Trash2 } from 'lucide-react'
 type NoteEditorProps = {
   noteId: string | null
   folderId: string | null
+  initialNote?: Note | null
   onClose: () => void
   onSaved: (note: Note) => void
   onDeleted: () => void
@@ -19,18 +20,26 @@ const SAVE_DEBOUNCE_MS = 800
 export function NoteEditor({
   noteId,
   folderId,
+  initialNote,
   onClose,
   onSaved,
   onDeleted,
 }: NoteEditorProps) {
-  const [note, setNote] = useState<Note | null>(null)
-  const [loading, setLoading] = useState(!!noteId)
-  const [title, setTitle] = useState('')
-  const [body, setBody] = useState('')
-  const [noteDate, setNoteDate] = useState('')
+  const [note, setNote] = useState<Note | null>(initialNote ?? null)
+  const [loading, setLoading] = useState(!!noteId && !initialNote)
+  const [title, setTitle] = useState(initialNote?.title ?? '')
+  const [body, setBody] = useState(initialNote?.body ?? '')
+  const [noteDate, setNoteDate] = useState(
+    initialNote
+      ? toDateInputValue(initialNote.note_date ?? initialNote.updated_at)
+      : noteId
+        ? ''
+        : todayDateString()
+  )
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const lastSavedRef = useRef<string | null>(null)
+  const prevNoteIdRef = useRef<string | null | undefined>(undefined)
   const persistRef = useRef<(p: { title: string; body: string; note_date: string | null }) => Promise<void>>(() => Promise.resolve())
 
   const persist = useCallback(
@@ -62,19 +71,35 @@ export function NoteEditor({
   )
   persistRef.current = persist
 
+  // Load note data — use initialNote when available, fetch as fallback
   useEffect(() => {
+    // Guard: don't re-run if noteId hasn't actually changed
+    if (prevNoteIdRef.current === noteId) return
+    prevNoteIdRef.current = noteId
+
     if (noteId) {
-      setLoading(true)
-      getNote(noteId).then((n) => {
+      if (initialNote && initialNote.id === noteId) {
+        // Data already in memory — use it directly
+        setNote(initialNote)
+        setTitle(initialNote.title)
+        setBody(initialNote.body)
+        setNoteDate(toDateInputValue(initialNote.note_date ?? initialNote.updated_at))
         setLoading(false)
-        if (n) {
-          setNote(n)
-          setTitle(n.title)
-          setBody(n.body)
-          setNoteDate(toDateInputValue(n.note_date ?? n.updated_at))
-          lastSavedRef.current = null
-        }
-      })
+        lastSavedRef.current = null
+      } else {
+        // Fallback: fetch from server (e.g. deep-link with note not in cache)
+        setLoading(true)
+        getNote(noteId).then((n) => {
+          setLoading(false)
+          if (n) {
+            setNote(n)
+            setTitle(n.title)
+            setBody(n.body)
+            setNoteDate(toDateInputValue(n.note_date ?? n.updated_at))
+            lastSavedRef.current = null
+          }
+        })
+      }
     } else {
       setNote(null)
       setTitle('')
@@ -82,8 +107,9 @@ export function NoteEditor({
       setNoteDate(todayDateString())
       lastSavedRef.current = null
     }
-  }, [noteId])
+  }, [noteId, initialNote])
 
+  // Auto-save debounce
   useEffect(() => {
     const payload = {
       title: title.trim(),
